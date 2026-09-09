@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>DPR Mobile Pro - Digital Labour & Daily Progress Report System</title>
+  
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#F59E0B">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DPR Pro">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" href="icons/favicon.png">
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Main App Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-section">
+        <img src="icons/icon-192.png" alt="DPR Pro Logo" class="brand-icon">
+        <div>
+          <div class="brand-title">
+            DPR PRO <span class="brand-badge">PWA</span>
+          </div>
+          <div class="brand-sub">Digital Labour & Site Progress Log</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Quick 1-Click Excel Export -->
+        <button class="btn btn-success" onclick="triggerExcelExport()" title="1-Click Immediate Excel Export (.xlsx)">
+          <span>⚡</span>
+          <span>Quick Excel</span>
+        </button>
+
+        <!-- Export Excel Customizer Modal -->
+        <button class="btn btn-secondary" onclick="openExportModal()" title="Customize Report Headers & Columns for Excel">
+          <span>⚙️</span>
+          <span class="btn-text-hide">Export Options</span>
+        </button>
+
+        <!-- Quick Add Entry -->
+        <button class="btn btn-primary" onclick="openAddModal()">
+          <span>➕</span>
+          <span>New Entry</span>
+        </button>
+
+        <!-- Rapid Batch Add -->
+        <button class="btn btn-secondary" onclick="openRapidEntryModal()" title="Fast Multi-Row Entry for entire team">
+          <span>⚡</span>
+          <span class="btn-text-hide">Rapid Batch</span>
+        </button>
+
+        <!-- Import Excel / CSV -->
+        <label class="btn btn-secondary" style="cursor: pointer; margin-bottom: 0;" title="Import from Excel or CSV">
+          <span>📥</span>
+          <span class="btn-text-hide">Import</span>
+          <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" style="display: none;">
+        </label>
+
+        <!-- QR Code Mobile Connect -->
+        <button class="btn btn-secondary" onclick="openMobilePairingModal()" title="Scan QR to open on Mobile Phone">
+          <span>📱</span>
+          <span class="btn-text-hide">Phone QR</span>
+        </button>
+
+        <!-- Install PWA -->
+        <button class="btn btn-secondary btn-install-pwa" onclick="openMobileInstallModal()" title="Download & Install Mobile App">
+          <span>📲</span>
+          <span class="btn-text-hide">Install App</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button class="btn btn-secondary btn-icon" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+          <span id="themeToggleIcon">☀️</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Top KPI & Metrics Banner -->
+  <section class="stats-banner">
+    <div id="statsGrid" class="stats-grid">
+      <!-- Injected dynamically based on template -->
+    </div>
+  </section>
+
+  <!-- Main Container -->
+  <main class="main-container">
+    
+    <!-- Controls & Filters Bar -->
+    <div class="controls-bar">
+      <div class="controls-left">
+        <!-- Template / Format Selector -->
+        <div class="template-selector">
+          <label for="templateSelect">Format:</label>
+          <select id="templateSelect" class="template-select">
+            <!-- Injected dynamically -->
+          </select>
+        </div>
+
+        <!-- View Switcher Tabs -->
+        <div class="view-toggle-group">
+          <button class="view-toggle-btn active" data-view="table">
+            <span>📋</span> Table View
+          </button>
+          <button class="view-toggle-btn" data-view="cards">
+            <span>📱</span> Mobile Cards
+          </button>
+          <button class="view-toggle-btn" data-view="customizer">
+            <span>⚙️</span> Customize Format
+          </button>
+        </div>
+      </div>
+
+      <div class="controls-right">
+        <!-- Global Search Input -->
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="globalSearchInput" class="search-input" placeholder="Search worker, trade, task...">
+        </div>
+
+        <!-- Date Range Filter -->
+        <select id="dateRangeSelect" class="date-filter-select">
+          <option value="all">All Dates</option>
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="this_week">Past 7 Days</option>
+          <option value="this_month">This Month</option>
+        </select>
+
+        <!-- Category Filter -->
+        <select id="categoryFilterSelect" class="category-filter-select">
+          <option value="all">All Categories</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Section Meta & Bulk Actions -->
+    <div class="section-meta">
+      <div class="section-title">
+        <span id="currentTemplateTitle">Labour Attendance & Daily Wages</span>
+        <span id="recordsCountBadge" class="section-count">0 Records</span>
+      </div>
+
+      <div id="bulkActionsBar" class="bulk-actions" style="display: none;">
+        <span id="bulkSelectedCount" style="font-size: 0.8rem; font-weight: 600; color: var(--accent-primary);">0 selected</span>
+        <button class="btn btn-danger btn-sm" onclick="bulkDeleteSelected()">🗑️ Delete Selected</button>
+      </div>
+    </div>
+
+    <!-- VIEW 1: Spreadsheet Table Grid View -->
+    <div id="tableViewContainer" class="table-wrapper">
+      <div class="data-table-scroll">
+        <table class="data-table">
+          <thead id="tableHead">
+            <!-- Columns generated dynamically -->
+          </thead>
+          <tbody id="tableBody">
+            <!-- Records generated dynamically -->
+          </tbody>
+          <tfoot id="tableFoot">
+            <!-- Summary totals generated dynamically -->
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- VIEW 2: Mobile Cards View -->
+    <div id="cardsViewContainer" style="display: none;">
+      <div id="cardsContainer" class="cards-grid">
+        <!-- Cards generated dynamically -->
+      </div>
+    </div>
+
+    <!-- VIEW 3: Format Designer & Column Customizer -->
+    <div id="customizerViewContainer" style="display: none;">
+      <div class="customizer-view">
+        <div class="customizer-header">
+          <div>
+            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem;">Format & Column Designer</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+              Customize the digital schema to match your exact hardcopy paper sheet. Add or rename columns, set formulas, and toggle Excel export.
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="addNewColumnPrompt()">+ Add New Column</button>
+            <button class="btn btn-secondary" onclick="createNewCustomTemplate()">➕ New Format</button>
+            <button class="btn btn-danger" onclick="resetActiveTemplateDefaults()">↺ Reset to Default</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 1.25rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 250px;">
+            <label class="form-label">Format Name</label>
+            <input type="text" id="customizerTemplateName" class="form-input" placeholder="e.g. Daily Labour Muster Roll">
+          </div>
+          <div style="flex: 2; min-width: 300px;">
+            <label class="form-label">Description / Purpose</label>
+            <input type="text" id="customizerTemplateDesc" class="form-input" placeholder="Notes about this hardcopy template">
+          </div>
+        </div>
+
+        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;">
+          Columns in this format:
+        </h4>
+        <div id="customizerFieldsList" class="field-list">
+          <!-- Column editor items rendered dynamically -->
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Mobile Floating Action Button (FAB) -->
+  <button class="fab-btn" onclick="openAddModal()" title="Add New Entry">
+    ➕
+  </button>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="mobile-nav-bar">
+    <button class="nav-item active" data-view="table">
+      <span class="icon">📋</span>
+      <span>Table</span>
+    </button>
+    <button class="nav-item" data-view="cards">
+      <span class="icon">📱</span>
+      <span>Cards</span>
+    </button>
+    <button class="nav-item" data-action="add">
+      <span class="icon" style="color: var(--accent-primary); font-size: 1.4rem;">➕</span>
+      <span style="color: var(--accent-primary); font-weight: 700;">Add</span>
+    </button>
+    <button class="nav-item" data-action="export">
+      <span class="icon">📊</span>
+      <span>Export</span>
+    </button>
+    <button class="nav-item" data-action="mobile">
+      <span class="icon">📲</span>
+      <span>App</span>
+    </button>
+  </nav>
+
+  <!-- MODAL 1: Dynamic Add / Edit Entry -->
+  <div id="entryModalOverlay" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div id="entryModalTitle" class="modal-title">Add Entry</div>
+        <button class="modal-close" onclick="closeEntryModal()">✕</button>
+      </div>
+      <form id="entryForm" style="display: contents;">
+        <div class="modal-body">
+          <div id="entryFormGrid" class="form-grid">
+            <!-- Dynamic form inputs rendered based on active template -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeEntryModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">💾 Save Entry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 1B: Rapid Batch Multi-Row Entry -->
+  <div id="rapidEntryModalOverlay" class="modal-overlay">
+    <div class="modal-box" style="max-width: 950px;">
+      <div class="modal-header">
+        <div class="modal-title">⚡ Rapid Batch Multi-Worker Entry</div>
+        <button class="modal-close" onclick="closeRapidEntryModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 1rem;">
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+          Quickly log multiple labourers on site at once. Fill the rows below and click "Save All Rows".
+        </p>
+        <div style="overflow-x: auto; max-height: 420px;">
+          <table class="data-table" style="font-size: 0.82rem;">
+            <thead>
+              <tr>
+                <th style="width: 140px;">Worker Name</th>
+                <th style="width: 130px;">Trade</th>
+                <th style="width: 90px;">Hours</th>
+                <th style="width: 80px;">OT</th>
+                <th style="width: 100px;">Wage Rate</th>
+                <th>Task / Location</th>
+                <th style="width: 50px;"></th>
+              </tr>
+            </thead>
+            <tbody id="rapidEntryTableBody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addRapidEntryRow()" style="margin-top: 0.75rem;">
+          ➕ Add Another Row
+        </button>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeRapidEntryModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveRapidEntryRows()">💾 Save All Rows</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Excel & CSV Export Settings -->
+  <div id="exportModalOverlay" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">📊 Export to Excel (.xlsx) & CSV</div>
+        <button class="modal-close" onclick="closeExportModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+          Generate a Microsoft Excel spreadsheet formatted with your exact project header, column layout, and total calculations.
+        </p>
+
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label class="form-label">Report Header Title in Excel</label>
+            <input type="text" id="exportReportTitle" class="form-input" placeholder="e.g. DAILY LABOUR ATTENDANCE REPORT">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Company / Builder Name</label>
+            <input type="text" id="exportCompanyName" class="form-input" placeholder="ABC INFRASTRUCTURE LTD">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Project / Site Name</label>
+            <input type="text" id="exportProjectName" class="form-input" placeholder="Metro Heights Tower B">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Contractor Name</label>
+            <input type="text" id="exportContractorName" class="form-input" placeholder="Prime Labour Contractors">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Supervisor In-Charge</label>
+            <input type="text" id="exportSupervisorName" class="form-input" placeholder="Site Supervisor Name">
+          </div>
+        </div>
+
+        <div style="margin-top: 1.25rem;">
+          <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+            Columns to Include in Export:
+          </h4>
+          <div id="exportColumnsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.4rem; background: var(--bg-input); padding: 0.75rem; border-radius: var(--radius-md); max-height: 160px; overflow-y: auto;">
+            <!-- Column checkboxes rendered dynamically -->
+          </div>
+        </div>
+
+        <div style="margin-top: 1rem; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+          <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+            <input type="checkbox" id="exportIncludeSummary" checked>
+            Include Grand Total / Summary Row
+          </label>
+          <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+            <input type="checkbox" id="exportIncludeSignatures" checked>
+            Include Supervisor Signature Block
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeExportModal()">Cancel</button>
+        <button type="button" class="btn btn-secondary" onclick="triggerCSVExport()">📄 Export CSV</button>
+        <button type="button" class="btn btn-success" onclick="triggerExcelExport()">📗 Download Excel (.xlsx)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Mobile Phone Pairing QR Code -->
+  <div id="mobilePairModalOverlay" class="modal-overlay">
+    <div class="modal-box" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title">📱 Open on Mobile Phone</div>
+        <button class="modal-close" onclick="closeMobilePairingModal()">✕</button>
+      </div>
+      <div class="modal-body qr-modal-content">
+        <p style="font-size: 0.88rem; color: var(--text-secondary);">
+          Scan this QR Code with your phone's camera (iPhone Camera or Android Google Lens / QR Scanner) to open this app directly on your phone!
+        </p>
+
+        <div id="mobileQrContainer" class="qr-code-box"></div>
+
+        <div style="margin: 0.5rem 0; display: flex; flex-direction: column; align-items: center; gap: 0.4rem;">
+          <div style="font-size: 0.95rem; font-weight: 700; color: var(--accent-primary); word-break: break-all;" id="mobileUrlDisplay">
+            http://192.168.1.153:3000
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="copyMobileUrl()">
+            📋 Copy Mobile Link
+          </button>
+        </div>
+
+        <details style="text-align: left; margin: 0.75rem 0; font-size: 0.8rem; color: var(--text-muted); background: var(--bg-input); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm);">
+          <summary style="cursor: pointer; color: var(--text-secondary); font-weight: 600;">⚙️ Use a different IP address?</summary>
+          <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+            <input type="text" id="customIpInput" placeholder="e.g. 192.168.1.153" style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.8rem; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="updateCustomMobileIp(document.getElementById('customIpInput').value)">Update QR</button>
+          </div>
+        </details>
+
+        <div class="install-steps">
+          <div class="install-step-item">
+            <span class="step-num">1</span>
+            <div>Make sure your phone and laptop are connected to the <strong>same Wi-Fi network</strong> (or phone hotspot).</div>
+          </div>
+          <div class="install-step-item">
+            <span class="step-num">2</span>
+            <div>Scan the QR code or type <strong>http://192.168.1.153:3000</strong> directly into Chrome or Safari on your phone.</div>
+          </div>
+          <div class="install-step-item">
+            <span class="step-num">3</span>
+            <div>Tap <strong>"Add to Home Screen"</strong> or <strong>"Install App"</strong> to use it completely offline!</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeMobilePairingModal()">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Mobile App Installation Guide -->
+  <div id="mobileInstallModalOverlay" class="modal-overlay">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-header">
+        <div class="modal-title">📲 Download to Mobile Phone</div>
+        <button class="modal-close" onclick="closeMobileInstallModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align: center; margin-bottom: 1.25rem;">
+          <img src="icons/icon-192.png" alt="App Icon" style="width: 64px; height: 64px; border-radius: 14px; box-shadow: var(--shadow-md);">
+          <h3 style="font-size: 1.15rem; font-weight: 800; margin-top: 0.5rem;">DPR Mobile Pro</h3>
+          <p style="font-size: 0.82rem; color: var(--text-secondary);">Works 100% offline without internet on construction sites</p>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem;">
+          <button id="tapToInstallBtn" class="btn btn-primary" style="flex: 1;" onclick="window.pwaManager.promptInstall()">
+            📲 Tap to Install Now
+          </button>
+        </div>
+
+        <div id="installStepsAndroid" class="install-steps" style="margin-bottom: 0.85rem;">
+          <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.65rem;">
+            🤖 On Android (Google Chrome):
+          </h4>
+          <div class="install-step-item">
+            <span class="step-num">1</span>
+            <div>Tap the <strong>three dots menu (⋮)</strong> in the top-right corner of your Chrome browser.</div>
+          </div>
+          <div class="install-step-item">
+            <span class="step-num">2</span>
+            <div>Tap <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</div>
+          </div>
+          <div class="install-step-item">
+            <span class="step-num">3</span>
+            <div>Tap <strong>"Install"</strong> or <strong>"Add"</strong>. The app icon will appear directly on your phone home screen!</div>
+          </div>
+        </div>
+
+        <div id="installStepsIos" class="install-steps">
+          <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.65rem;">
+            🍎 On iPhone / iPad (Safari):
+          </h4>
+          <div class="install-step-item">
+            <span class="step-num">1</span>
+            <div>Tap the <strong>Share button (square with arrow pointing up ⎋)</strong> at the bottom of Safari.</div>
+          </div>
+          <div class="install-step-item">
+            <span class="step-num">2</span>
+            <div>Scroll down and tap <strong>"Add to Home Screen" ➕</strong>.</div>
+          </div>
+          <div class="install-step-item">
+            <span class="step-num">3</span>
+            <div>Tap <strong>Add</strong> in the top-right. DPR Pro is now downloaded and ready!</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeMobileInstallModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Local Offline Scripts -->
+  <script src="js/vendor/xlsx.full.min.js"></script>
+  <script src="js/vendor/qrcode.min.js"></script>
+  <script src="js/templates.js"></script>
+  <script src="js/crud.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
